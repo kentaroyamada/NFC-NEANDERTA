@@ -1,0 +1,6 @@
+
+AuthType Basic
+AuthName "Password Protected Area"
+AuthUserFile /var/www/html/owners.neandertal.co.uk/data/.htpasswd
+Require valid-user
+

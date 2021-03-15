@@ -1,0 +1,8 @@
+{
+  "name": "neandertal/owners",
+  "type": "project",
+  "require": {
+    "hashids/hashids": "^3.0",
+    "vlucas/phpdotenv": "^5.3"
+  }
+}
