@@ -19,29 +19,43 @@ use
 	DataTables\Editor\ValidateOptions;
 
 // Build our Editor instance and process the data coming from _POST
-Editor::inst( $db, 'NFC' )
+Editor::inst( $db, 'tags' )
+	->leftJoin( 'products', 'products.id', '=', 'tags.product_id' )
+	->leftJoin( 'owners', 'owners.id', '=', 'tags.owner_id' )
 	->fields(
-		Field::inst( 'type' )
+		Field::inst( 'products.type' ),
+		Field::inst( 'tags.product_id' )
 			->validator( Validate::notEmpty( ValidateOptions::inst()
-				->message( 'type is requied' )	
-			) ),
-		Field::inst( 'our_id' )
+				->message( 'type is requied' )
+			) )
+			->options( Options::inst()
+        ->table( 'products' )
+        ->value( 'id' )
+        ->label( 'type' )
+    	),
+		Field::inst( 'tags.our_id' )
 			->validator( Validate::notEmpty( ValidateOptions::inst()
-				->message( 'our_id required' )	
+				->message( 'our_id required' )
 			) ),
-		Field::inst( 'decoded' ),
-		Field::inst( 'encoded' ),
-		Field::inst( 'URL' ),
-		Field::inst( 'quality' ),
-		Field::inst( 'owner_name' ),
-		Field::inst( 'tagged' ),
-		Field::inst( 'sales_term' ),
-		Field::inst( 'tagged_date' )
+		Field::inst( 'tags.decoded' ),
+		Field::inst( 'tags.encoded' ),
+		Field::inst( 'tags.URL' ),
+		Field::inst( 'tags.quality' ),
+		Field::inst( 'owners.owner_name' ),
+		Field::inst( 'tags.owner_id' )
+			->options( Options::inst()
+				->table( 'owners' )
+				->value( 'id' )
+				->label( 'owner_name' )
+			),
+		Field::inst( 'tags.tagged' ),
+		Field::inst( 'tags.sales_term' ),
+		Field::inst( 'tags.tagged_date' )
 			->validator( Validate::dateFormat( 'Y-m-d' ) )
 			->getFormatter( Format::dateSqlToFormat( 'Y-m-d' ) )
 			->setFormatter( Format::dateFormatToSql('Y-m-d' ) ),
 
-		Field::inst( 'sold_date' )
+		Field::inst( 'tags.sold_date' )
 			->validator( Validate::dateFormat( 'Y-m-d' ) )
 			->getFormatter( Format::dateSqlToFormat( 'Y-m-d' ) )
 			->setFormatter( Format::dateFormatToSql('Y-m-d' ) )

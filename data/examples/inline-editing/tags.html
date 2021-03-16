@@ -30,7 +30,7 @@
 	<script type="text/javascript" language="javascript" src="../resources/demo.js?"></script>
 	<script type="text/javascript" language="javascript" src="../resources/editor-demo.js"></script>
 	<script type="text/javascript" language="javascript" class="init">
-	
+
 
 
 
@@ -39,42 +39,44 @@ var editor; // use a global for the submit and return data rendering in the exam
 
 $(document).ready(function() {
 	editor = new $.fn.dataTable.Editor( {
-		ajax: "../../controllers/NFC.php",
+		ajax: "../../controllers/tags.php",
 		table: "#example",
 		fields: [  {
-				label: "type:",
-				name: "type"
+				label: "product:",
+				name: "tags.product_id",
+				type: "select"
 			}, {
 				label: "our_id:",
-				name: "our_id"
+				name: "tags.our_id"
 			}, {
 				label: "decoded:",
-				name: "decoded"
+				name: "tags.decoded"
 			}, {
 				label: "encoded:",
-				name: "encoded"
+				name: "tags.encoded"
 			},{
 				label: "URL:",
-				name: "URL"
+				name: "tags.URL"
 			},{
 				label: "quality:",
-				name: "quality"
+				name: "tags.quality"
 			} ,{
-				label: "owner_name:",
-				name: "owner_name"
+				label: "owner:",
+				name: "tags.owner_id",
+				type: "select"
 			}  ,{
 				label: "sales_term:",
-				name: "sales_term"
+				name: "tags.sales_term"
 			} ,{
 				label: "tagged:",
-				name: "tagged"
+				name: "tags.tagged"
 			} ,{
 				label: "Tagged date:",
-				name: "tagged_date",
+				name: "tags.tagged_date",
 				type: "datetime"
 			}, {
 				label: "Sold Date:",
-				name: "sold_date",
+				name: "tags.sold_date",
 				type: "datetime"
 			}
 		]
@@ -82,12 +84,14 @@ $(document).ready(function() {
 
 	// Activate an inline edit on click of a table cell
 	$('#example').on( 'click', 'tbody td:not(:first-child)', function (e) {
-		editor.inline( this );
+		editor.inline( this, {
+      submitOnBlur: true
+    } );
 	} );
 
 	$('#example').DataTable( {
 		dom: "Blfrtip",
-		ajax: "../../controllers/NFC.php",
+		ajax: "../../controllers/tags.php",
 		order: [[ 3, 'asc' ]],
 		cache: false,
 		columns: [
@@ -97,18 +101,18 @@ $(document).ready(function() {
 				className: 'select-checkbox',
 				orderable: false
 			},
-			{ data: "type" },
-			{ data: "our_id" },
-			{ data: "decoded" },
-			{ data: "encoded" },
-			{ data: "URL", render: $.fn.dataTable.render.number( ',', '.', 0, '$' ) },
-			{ data: "quality" },
-			{ data: "owner_name" },
-			{ data: "sales_term" },
-			{ data: "tagged" },
+			{ data: "products.type", editField: "tags.product_id" },
+			{ data: "tags.our_id" },
+			{ data: "tags.decoded" },
+			{ data: "tags.encoded" },
+			{ data: "tags.URL", render: $.fn.dataTable.render.number( ',', '.', 0, '$' ) },
+			{ data: "tags.quality" },
+			{ data: "owners.owner_name", editField: "tags.owner_id" },
+			{ data: "tags.sales_term" },
+			{ data: "tags.tagged" },
 
-			{ data: "tagged_date" },
-			{ data: "sold_date" },
+			{ data: "tags.tagged_date" },
+			{ data: "tags.sold_date" },
 		],
 		select: {
 			style:    'os',
@@ -133,12 +137,12 @@ $(document).ready(function() {
 	</header>
 	<div class="container">
 		<section>
-			 <span>Neandertal NFC editing</span>
-			
+			 <span>Neandertal NFC Tag editing</span>
+
 			<div class="demo-html"></div>
 			<table id="example" class="display" cellspacing="0" width="100%">
 				<thead>
-					<tr>						
+					<tr>
 						<th></th>
 
 						<th>type</th>
@@ -242,16 +246,16 @@ $(document).ready(function() {
 			selector: 'td:first-child'
 		},
 		buttons: [
-		
+
 			{ extend: &quot;create&quot;, editor: editor },
 			{ extend: &quot;edit&quot;,   editor: editor },
 			{ extend: &quot;remove&quot;, editor: editor },
-			
+
 
 		]
 	} );
 } );</code>
-					
+
 				</div>
 
 				<div class="ajax">
@@ -266,6 +270,6 @@ $(document).ready(function() {
 			</div>
 		</section>
 	</div>
-	
+
 </body>
 </html>

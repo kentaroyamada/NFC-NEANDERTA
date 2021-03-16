@@ -38,18 +38,24 @@ $owner_name='';
 $sold_date='';
 
 
-$sql = "SELECT * from NFC where encoded='". $encoded . "';";
+$sql = "SELECT t.*, o.owner_name, p.type FROM tags t";
+$sql .=" INNER JOIN products p ON (t.product_id = p.id)";
+$sql .=" LEFT JOIN owners o ON (t.owner_id = o.id)";
+$sql .= " WHERE encoded='". $encoded . "';";
 
 if ($result = mysqli_query($link, $sql) ) {
-    
+
     while ($row = mysqli_fetch_assoc($result)) {
       //$row = mysqli_fetch_assoc($result);
-      
+
+      $our_id = $row['our_id'];
+      $product_type = $row['type'];
       $owner_name =  $row['owner_name'];
       $sold_date =  $row['sold_date'];
-      $sold_date = substr($sold_date, 0, strpos($sold_date, ' '));   }
+      $sold_date = substr($sold_date, 0, strpos($sold_date, ' '));
+    }
 
-} 
+}
 
 else {
     echo "Error: " . $sql . " " . $link->error;
@@ -61,7 +67,7 @@ $link->close();
 
 if ( substr( $_GET["id"], 0, 4 ) === "TEST" ){
 
- 
+
    $owner="TESTER UNIT <BR> NOT FOR RESALE";
    if ( substr( $_GET["id"], 7, 2) == "ND" ){
       $isDark = true;
@@ -76,8 +82,7 @@ if ( substr( $_GET["id"], 0, 4 ) === "TEST" ){
 else{
 
 
-$input = $hashids->decode( $encoded);
-$input= $input[0];
+$input = $our_id;
 
 
 
@@ -91,14 +96,13 @@ $owner="non-owner";
    }
 
 
-   else if($input < 1000) {
+   else if($product_type == 'dark') {
    $owner="Neandertal dark&trade; Owner ID ";
    $isDark = true;
    $isOwner = true;
    }
-   else if($input > 1000){
+   else if($product_type == 'light'){
    $owner="Neandertal light&trade; Owner ID ";
-   $input=$input-1000;
    $isOwner = true;
    $isLight = true;
    }
@@ -234,7 +238,7 @@ $owner="non-owner";
 </div>
 </div>
 </div>
-</header> 
+</header>
 
 
       <div class="wrapper">
@@ -281,11 +285,11 @@ Base notes – Ambergris, Patchouli, Leather, Cedar &amp; Musk</h3>");
                               else {}
                         ?>
 
-                        
+
                      </div>
                      <div class="separator " style="margin-top: 50px;margin-bottom: 50px;"></div>
 
-                     <?php 
+                     <?php
                         if ($isOwner == true) {
                           echo( "<div class=\"indridients\"><h3 style=\"text-decoration: underline;\">Special offers for owners. </h3>
                            <h3>Please redeem special discount by entering the code \"modernhuman\" at our <a href=\"https://neandertal.co.uk/shop/\">online store</a> to get special discounts. <br /> If you would like your friend to experience Neandertal, please <a href=\"mailto:contact@neandertal.co.uk?subject=Free sample request from app code:" . $encoded . " \">click here and email us</a> with his/her details. We will send Neandertal light and dark samples for free.</h3>
@@ -299,11 +303,11 @@ Base notes – Ambergris, Patchouli, Leather, Cedar &amp; Musk</h3>");
                         }
                      ?>
 
-                     
+
                      <div class="separator " style="margin-top: 50px;margin-bottom: 50px;"></div>
 
 
-               </div> 
+               </div>
             </div>
             <!-- <footer>
                <div class="footer_inner clearfix" >

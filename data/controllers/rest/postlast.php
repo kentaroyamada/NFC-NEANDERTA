@@ -21,17 +21,16 @@ $username   = "root";
 $password   = "9hrs2etx";
 $dbname     = "NFC";
 $servername = "localhost";
-$type = "dark";
 
-$ourid = $nextNum;
-if ((int)$nextNum > 1000) {
-	$ourid = (int)$nextNum - 1000;
-	$type = "light";
-}
+$hashids = new Hashids\Hashids($password,8);
+$decoded = $hashids->decode($encoded);
+$productId = $decoded[0];
+$ourid = $decoded[1];
 
 
-
-$sql = "INSERT INTO NFC (type, decoded, our_id, tagged, encoded, URL) VALUES ('". $type. "',". $nextNum. "," . $ourid. ", ". "'1', '" . $encoded . "',". "'https://owners.neandertal.co.uk/?id=" .$encoded .  "');";
+$sql = "INSERT INTO tags (product_id, decoded, our_id, tagged, encoded, URL, old_id) VALUES ";
+$sql .= "(". $productId. ",'". $nextNum. "'," . $ourid. ", ". "'1', '" . $encoded . "',";
+$sql .= "'https://owners.neandertal.co.uk/?id=" .$encoded .  "', 0);";
 echo $sql;
 echo "\n\r";
 
