@@ -50,7 +50,7 @@ if ($result = mysqli_query($link, $sql) ) {
       echo $nextNum[0] . "/" . $nextNum[1] ." ". $encoded  ;
 
     } else {
-      echo "Error: " . $sql . " No Results";
+      echo "Error: No Results for '" . $type . "'";
     }
 
 }
