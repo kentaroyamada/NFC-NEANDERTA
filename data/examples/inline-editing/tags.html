@@ -63,7 +63,10 @@ $(document).ready(function() {
 			} ,{
 				label: "owner:",
 				name: "tags.owner_id",
-				type: "select"
+				type: "select",
+				placeholderDisabled: false,
+				placeholderValue: '',
+				placeholder: "-- None --"
 			}  ,{
 				label: "sales_term:",
 				name: "tags.sales_term"
@@ -78,6 +81,13 @@ $(document).ready(function() {
 				label: "Sold Date:",
 				name: "tags.sold_date",
 				type: "datetime"
+			}, {
+				label: "Sold At:",
+				name: "tags.sold_at",
+				type: "select",
+				placeholderDisabled: false,
+				placeholderValue: '',
+				placeholder: "-- None --"
 			}
 		]
 	} );
@@ -113,6 +123,7 @@ $(document).ready(function() {
 
 			{ data: "tags.tagged_date" },
 			{ data: "tags.sold_date" },
+			{ data: "shops.name",  editField: "tags.sold_at"}
 		],
 		select: {
 			style:    'os',
@@ -157,6 +168,7 @@ $(document).ready(function() {
 
 						<th>tagged_date</th>
 						<th>sold_date</th>
+						<th>sold_at</th>
 
 					</tr>
 				</thead>

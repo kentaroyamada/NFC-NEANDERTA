@@ -22,6 +22,7 @@ use
 Editor::inst( $db, 'tags' )
 	->leftJoin( 'products', 'products.id', '=', 'tags.product_id' )
 	->leftJoin( 'owners', 'owners.id', '=', 'tags.owner_id' )
+	->leftJoin( 'shops', 'shops.id', '=', 'tags.sold_at' )
 	->fields(
 		Field::inst( 'products.type' ),
 		Field::inst( 'tags.product_id' )
@@ -43,6 +44,7 @@ Editor::inst( $db, 'tags' )
 		Field::inst( 'tags.quality' ),
 		Field::inst( 'owners.owner_name' ),
 		Field::inst( 'tags.owner_id' )
+			->setFormatter( Format::ifEmpty( null ) )
 			->options( Options::inst()
 				->table( 'owners' )
 				->value( 'id' )
@@ -54,7 +56,14 @@ Editor::inst( $db, 'tags' )
 			->validator( Validate::dateFormat( 'Y-m-d' ) )
 			->getFormatter( Format::dateSqlToFormat( 'Y-m-d' ) )
 			->setFormatter( Format::dateFormatToSql('Y-m-d' ) ),
-
+		Field::inst( 'shops.name' ),
+		Field::inst( 'tags.sold_at' )
+			->setFormatter( Format::ifEmpty( null ) )
+			->options( Options::inst()
+				->table( 'shops' )
+				->value( 'id' )
+				->label( 'name' )
+			),
 		Field::inst( 'tags.sold_date' )
 			->validator( Validate::dateFormat( 'Y-m-d' ) )
 			->getFormatter( Format::dateSqlToFormat( 'Y-m-d' ) )
