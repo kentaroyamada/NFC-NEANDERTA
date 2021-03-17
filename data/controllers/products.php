@@ -22,7 +22,8 @@ use
 Editor::inst( $db, 'products' )
 	->fields(
 		Field::inst( 'type' ),
-		Field::inst( 'name' )
+		Field::inst( 'name' ),
+		Field::inst( 'is_refillable' )
 	)
 	->process( $_POST )
 	->json();
