@@ -38,9 +38,11 @@ $owner_name='';
 $sold_date='';
 
 
-$sql = "SELECT t.*, o.owner_name, p.type FROM tags t";
+$sql = "SELECT t.*, o.owner_name, p.type, p.name AS product_name, p.is_refillable";
+$sql .= ", s.name AS shop_name FROM tags t";
 $sql .=" INNER JOIN products p ON (t.product_id = p.id)";
 $sql .=" LEFT JOIN owners o ON (t.owner_id = o.id)";
+$sql .=" LEFT JOIN shops s ON (t.sold_at = s.id)";
 $sql .= " WHERE encoded='". $encoded . "';";
 
 if ($result = mysqli_query($link, $sql) ) {
@@ -48,17 +50,106 @@ if ($result = mysqli_query($link, $sql) ) {
     while ($row = mysqli_fetch_assoc($result)) {
       //$row = mysqli_fetch_assoc($result);
 
+      $id = $row['id'];
       $our_id = $row['our_id'];
+      $owner_id = $row['owner_id'];
+      $is_refillable = $row['is_refillable'];
       $product_type = $row['type'];
+      $product_name = $row['product_name'];
       $owner_name =  $row['owner_name'];
+      $shop_name =  $row['shop_name'];
       $sold_date =  $row['sold_date'];
       $sold_date = substr($sold_date, 0, strpos($sold_date, ' '));
+      $last_refill_date =  $row['last_refill_date'];
+      $last_refill_date = substr($last_refill_date, 0, strpos($last_refill_date, ' '));
+      $registered_date =  $row['last_refill_date'];
+      $registered_date = substr($registered_date, 0, strpos($registered_date, ' '));
     }
 
 }
 
 else {
     echo "Error: " . $sql . " " . $link->error;
+}
+
+$form_errors = array();
+$action = isset($_POST["action"]) ? $_POST["action"] : '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id && $our_id) {
+  if ($action == 'update') {
+    // TODO: Validation of agreement (and maybe add agreement?)
+    if (empty($owner_name = $_POST["name"])) {
+      $form_errors["name"] = "Name is required";
+    }
+    if (empty($owner_email = $_POST['email'])) {
+      $form_errors["email"] = "Email is required";
+    }
+    if (empty($owner_phone = $_POST['phone'])) {
+      $form_errors["phone"] = "Phone is required";
+    }
+    if (empty($owner_street1 = $_POST['street1'])) {
+      $form_errors["street1"] = "Street 1 is required";
+    }
+    if (empty($owner_city = $_POST['city'])) {
+      $form_errors["city"] = "City is required";
+    }
+    if (empty($owner_country = $_POST['country'])) {
+      $form_errors["country"] = "Country is required";
+    }
+    if (empty($owner_postcode = $_POST['postcode'])) {
+      $form_errors["postcode"] = "Post code is required";
+    }
+    $owner_street2 = $_POST['street2'];
+
+    if (!count($form_errors)) {
+      try {
+        $sql = "INSERT INTO owners (owner_name, owner_email, owner_address";
+        $sql .= ", owner_phone, owner_postcode) VALUES (?, ?, ?, ?, ?)";
+        $stmt = $link->prepare($sql. " ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)");
+        $stmt->bind_param("sssss", $owner_name, $owner_email, $owner_address, $owner_phone, $owner_postcode);
+
+        $owner_address = $owner_street1;
+        if ($owner_street2) $owner_address .= ', ' . $owner_street2;
+        $owner_address .= ', ' . $owner_city;
+        $owner_address .= ', ' . $owner_postcode;
+        $owner_address .= ', ' . $owner_country;
+
+        $stmt->execute();
+        if (!$stmt->error) {
+          $owner_id = $stmt->insert_id;
+          $stmt->close();
+
+          $sql = 'UPDATE tags SET owner_id = ?, registered_date = ifnull(registered_date, now()) WHERE id = ?';
+          $stmt = $link->prepare($sql);
+          $stmt->bind_param("ii", $owner_id, $id);
+          $stmt->execute();
+
+          if (!$stmt->error) {
+            $registered = true;
+          } else {
+            $error = $stmt->error;
+          }
+          $stmt->close();
+        } else {
+          $error = $stmt->error;
+          $stmt->close();
+        }
+      } catch (Throwable $e) {
+        $error = $e->getMessage();
+      }
+    }
+  }
+}
+
+$products = array();
+if ($id && $our_id && $owner_id) {
+  $sql = "SELECT * FROM tags t INNER JOIN products p ON (t.product_id = p.id)";
+  $sql .= " WHERE t.URL IS NOT NULL AND t.owner_id = " . $owner_id;
+  $sql .= " AND t.our_id != " . $our_id;
+  if ($result = mysqli_query($link, $sql) ) {
+    while ($row = mysqli_fetch_assoc($result)) {
+      $products[] = $row;
+    }
+  }
 }
 
 $link->close();
@@ -88,7 +179,6 @@ $input = $our_id;
 
 
 
-
 $owner="non-owner";
 
    if($input == '') {
@@ -97,12 +187,10 @@ $owner="non-owner";
 
 
    else if($product_type == 'dark') {
-   $owner="Neandertal dark&trade; Owner ID ";
    $isDark = true;
    $isOwner = true;
    }
    else if($product_type == 'light'){
-   $owner="Neandertal light&trade; Owner ID ";
    $isOwner = true;
    $isLight = true;
    }
@@ -110,6 +198,10 @@ $owner="non-owner";
    $owner="You are not an owner ";
    }
 
+}
+
+function if_isset($value) {
+  return isset($value) ? $value : '';
 }
 
 ?>
@@ -151,7 +243,42 @@ $owner="non-owner";
 
 
 
-
+<style media="screen">
+  p, label {
+    color:black;
+  }
+  form {
+    margin-bottom: 1em;
+  }
+  span.error, small.error {
+    color: red;
+    display: block;
+  }
+  button.button {
+    background-color: black !important;
+    color: white !important;
+    font-family: crimson text,sans-serif;
+    line-height: 35px;
+    border-color: #000;
+    font-weight: 500;
+    border-radius: 0;
+    -moz-border-radius: 0;
+    -webkit-border-radius: 0;
+    letter-spacing: 1px;
+    border-width: 0;
+  }
+  form#register {
+    max-width: 300px;
+    text-align: left;
+    margin: auto;
+  }
+  form#register input[type="text"] {
+    width: 100%;
+    border-color: #000;
+    border-radius: 0;
+    border-width: 1px;
+  }
+</style>
 
 
 
@@ -249,9 +376,88 @@ $owner="non-owner";
             <div class="content" style="min-height:100%; width:100%; position:relative; display:block;">
                <div class="wpb_text_column wpb_content_element" style="text-align:center;">
 
-                     <h3><br /> <?php echo $owner . $input . '.'; ?> </h3>
-                     <h3><?php echo 'Sold to: ' . $owner_name . '.'; ?> </h3>
+                     <h3><br /> <?php echo htmlentities($product_name) . ' Owner ID ' . $input . '.'; ?> </h3>
+                     <h3><?php echo 'Sold to: ' . ($owner_id ? $owner_name : '&lt;Not Registered&gt;') . '.'; ?> </h3>
                      <h3><?php echo 'Shipped on: ' . $sold_date . '.'; ?> </h3>
+
+                     <?php if ($error) { ?>
+                       <span class="error">Error: <?php echo $error; ?></span>
+                     <?php } ?>
+
+                     <div id="adminarea">
+                     <?php if ($our_id && (!$owner_id || $action == 'edit' || count($form_errors))) { ?>
+                       <h1>Register</h1>
+                       <form id="register" method="post" action="">
+                         <label>Name *</label><br>
+                         <input type="text" name="name" value="<?php echo $_POST['name'] ?>" placeholder="Your Name"><br>
+                         <?php echo isset($form_errors['name']) ? "<small class='error'>$form_errors[name]</small>" : "" ?>
+                         <label>Email *</label><br>
+                         <input type="email" name="email" value="<?php echo $_POST['email'] ?>" placeholder="Your Email Address"><br>
+                         <?php echo isset($form_errors['email']) ? "<small class='error'>$form_errors[email]</small>" : "" ?>
+                         <label>Address *</label><br>
+                         <input type="text" name="street1" value="<?php echo $_POST['street1'] ?>" placeholder="Street 1"><br>
+                         <?php echo isset($form_errors['street1']) ? "<small class='error'>$form_errors[street1]</small>" : "" ?>
+                         <input type="text" name="street2" value="<?php echo $_POST['street2'] ?>" placeholder="Street 2"><br>
+                         <?php echo isset($form_errors['street2']) ? "<small class='error'>$form_errors[street2]</small>" : "" ?>
+                         <input type="text" name="city" value="<?php echo $_POST['city'] ?>" placeholder="City"><br>
+                         <?php echo isset($form_errors['city']) ? "<small class='error'>$form_errors[city]</small>" : "" ?>
+                         <input type="text" name="postcode" value="<?php echo $_POST['postcode'] ?>" placeholder="Post code"><br>
+                         <?php echo isset($form_errors['postcode']) ? "<small class='error'>$form_errors[postcode]</small>" : "" ?>
+                         <input type="text" name="country" value="<?php echo $_POST['country'] ?>" placeholder="Country"><br>
+                         <?php echo isset($form_errors['country']) ? "<small class='error'>$form_errors[country]</small>" : "" ?>
+                         <label>Phone *</label><br>
+                         <input type="text" name="phone" value="<?php echo $_POST['phone'] ?>" placeholder="Phone Number"><br>
+                         <?php echo isset($form_errors['phone']) ? "<small class='error'>$form_errors[phone]</small>" : "" ?>
+                         <input type="checkbox" name="agree"> <label>Agree to xxx</label><br>
+                         <?php echo isset($form_errors['agree']) ? "<small class='error'>$form_errors[agree]</small>" : "" ?>
+                         <button class="button" type="submit" name="action" value="update">Register</button>
+                         <?php if ($owner_id) { ?>
+                         <button class="button" type="submit" name="action" value="cancel">Cancel</button>
+                         <?php } ?>
+                       </form>
+                     <?php } elseif ($owner_id && $our_id) { ?>
+                       <h1>Welcome <?php echo $owner_name; ?></h1>
+                       <h3>Your product ID is <?php echo $our_id; ?></h3>
+                       <h3>Your product record</h3>
+                       <p style="margin-bottom:2em">
+                         <?php if ($shop_name && $sold_date) {
+                           echo "You bought from $shop_name on $sold_date<br>";
+                         } ?>
+                         <?php if ($registered_date) {
+                           echo "You registered on $registered_date<br>";
+                         } ?>
+                         <?php if ($last_refill_date) {
+                           echo "You refilled on $last_refill_date<br>";
+                         } ?>
+                       </p>
+                       <?php if (count($products)) { ?>
+                         <h3>Your other products</h3>
+                         <p>
+                           <ul>
+                           <?php foreach ($products as $product) { ?>
+                              <li><label>
+                                <a href="/?id=<?php echo $product['encoded'] ?>">
+                                <?php echo htmlentities($product['name']) . ' Owner ID ' . $product['our_id']; ?>
+                                </a>
+                              </label></li>
+                           <?php } ?>
+                           </ul>
+                         </p>
+                       <?php } ?>
+                       <form method="get" action="mailto:contact@neandertal.co.uk?subject=Owner+Enquiry">
+                         <button type="submit" class="button">Contact customer service</button>
+                       </form>
+                       <?php if ($is_refillable) { ?>
+                       <form method="get" action="<?php echo "https://neandertal.co.uk/shop/$product_type-refill" ?>">
+                         <button type="submit" class="button">Order refill</button>
+                       </form>
+                      <?php } ?>
+                       <form method="post" action="">
+                         <input type="hidden" name="action" value="edit">
+                         <button type="submit" class="button">Change Ownership</button>
+                       </form>
+                     <?php } ?>
+                     </div>
 
 
                      <div id="photos" style="padding-top: 30px;">
