@@ -67,7 +67,11 @@ Editor::inst( $db, 'tags' )
 		Field::inst( 'tags.sold_date' )
 			->validator( Validate::dateFormat( 'Y-m-d' ) )
 			->getFormatter( Format::dateSqlToFormat( 'Y-m-d' ) )
-			->setFormatter( Format::dateFormatToSql('Y-m-d' ) )
+			->setFormatter( Format::dateFormatToSql('Y-m-d' ) ),
+			Field::inst( 'tags.last_refill_date' )
+				->validator( Validate::dateFormat( 'Y-m-d' ) )
+				->getFormatter( Format::dateSqlToFormat( 'Y-m-d' ) )
+				->setFormatter( Format::dateFormatToSql('Y-m-d' ) )
 	)
 	->process( $_POST )
 	->json();

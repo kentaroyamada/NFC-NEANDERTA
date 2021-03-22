@@ -88,6 +88,10 @@ $(document).ready(function() {
 				placeholderDisabled: false,
 				placeholderValue: '',
 				placeholder: "-- None --"
+			}, {
+				label: "Last Refill Date:",
+				name: "tags.last_refill_date",
+				type: "datetime"
 			}
 		]
 	} );
@@ -123,7 +127,8 @@ $(document).ready(function() {
 
 			{ data: "tags.tagged_date" },
 			{ data: "tags.sold_date" },
-			{ data: "shops.name",  editField: "tags.sold_at"}
+			{ data: "shops.name",  editField: "tags.sold_at"},
+			{ data: "tags.last_refill_date" }
 		],
 		select: {
 			style:    'os',
@@ -169,7 +174,7 @@ $(document).ready(function() {
 						<th>tagged_date</th>
 						<th>sold_date</th>
 						<th>sold_at</th>
-
+						<th>last_refill_date</th>
 					</tr>
 				</thead>
 			</table>
