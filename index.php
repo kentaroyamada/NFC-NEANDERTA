@@ -9,8 +9,11 @@ $password   = "9hrs2etx";
 $dbname     = "NFC";
 $servername = "localhost";
 
-
 $hashids = new Hashids\Hashids('9hrs2etx', 8);
+
+function if_isset($array, $value) {
+  return isset($array[$value]) ? $array[$value] : '';
+}
 
 $link =  mysqli_connect($servername, $username, $password, $dbname);
 // Check connection
@@ -20,11 +23,6 @@ if($link == false)
         echo "connection rerror";
 }
 
-
-$isOwner = false;
-$isDark = false;
-$isLight = false;
-
 if ( !$_GET["id"]){
    $encoded = '1';
    echo 'id not detected';
@@ -33,12 +31,21 @@ else{
  $encoded = $_GET["id"];
 }
 
+$id = '';
+$error = '';
+$our_id = '';
+$image_url = '';
+$description = '';
+$is_refillable = '';
+$product_type = '';
+$product_name = '';
+$owner_name = '';
+$shop_name = '';
+$sold_date = '';
+$last_refill_date =  '';
 
-$owner_name='';
-$sold_date='';
-
-
-$sql = "SELECT t.*, o.owner_name, p.type, p.name AS product_name, p.is_refillable";
+$sql = "SELECT t.*, o.owner_name, p.type, p.name AS product_name";
+$sql .= ", p.is_refillable, p.image_url, p.description";
 $sql .= ", s.name AS shop_name FROM tags t";
 $sql .=" INNER JOIN products p ON (t.product_id = p.id)";
 $sql .=" LEFT JOIN owners o ON (t.owner_id = o.id)";
@@ -53,6 +60,8 @@ if ($result = mysqli_query($link, $sql) ) {
       $id = $row['id'];
       $our_id = $row['our_id'];
       $owner_id = $row['owner_id'];
+      $image_url = $row['image_url'];
+      $description = $row['description'];
       $is_refillable = $row['is_refillable'];
       $product_type = $row['type'];
       $product_name = $row['product_name'];
@@ -76,7 +85,9 @@ $form_errors = array();
 $action = isset($_POST["action"]) ? $_POST["action"] : '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id && $our_id) {
   if ($action == 'update') {
-    // TODO: Validation of agreement (and maybe add agreement?)
+    if (empty($_POST['tandcs'])) {
+      $form_errors['tandcs'] = 'You must gress to the Terms and Conditions';
+    }
     if (empty($owner_name = $_POST["name"])) {
       $form_errors["name"] = "Name is required";
     }
@@ -99,13 +110,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id && $our_id) {
       $form_errors["postcode"] = "Post code is required";
     }
     $owner_street2 = $_POST['street2'];
+    $marketing = empty($_POST['marketing']) ? 0 : 1;
 
     if (!count($form_errors)) {
       try {
         $sql = "INSERT INTO owners (owner_name, owner_email, owner_address";
-        $sql .= ", owner_phone, owner_postcode) VALUES (?, ?, ?, ?, ?)";
-        $stmt = $link->prepare($sql. " ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)");
-        $stmt->bind_param("sssss", $owner_name, $owner_email, $owner_address, $owner_phone, $owner_postcode);
+        $sql .= ", owner_phone, owner_postcode, marketing_agreement) VALUES (?, ?, ?, ?, ?, ?)";
+        $stmt = $link->prepare($sql. " ON DUPLICATE KEY UPDATE marketing_agreement = ?, id = LAST_INSERT_ID(id)");
+        $stmt->bind_param("sssssii", $owner_name, $owner_email, $owner_address, $owner_phone, $owner_postcode, $marketing, $marketing);
 
         $owner_address = $owner_street1;
         if ($owner_street2) $owner_address .= ', ' . $owner_street2;
@@ -153,56 +165,6 @@ if ($id && $our_id && $owner_id) {
 }
 
 $link->close();
-
-
-
-if ( substr( $_GET["id"], 0, 4 ) === "TEST" ){
-
-
-   $owner="TESTER UNIT <BR> NOT FOR RESALE";
-   if ( substr( $_GET["id"], 7, 2) == "ND" ){
-      $isDark = true;
-
-   }
-   else if(substr( $_GET["id"], 7, 2) == "NL") {
-
-      $isLight = true;
-   }
-}
-
-else{
-
-
-$input = $our_id;
-
-
-
-
-
-$owner="non-owner";
-
-   if($input == '') {
-      $owner="TESTER UNIT - NON OWNER";
-   }
-
-
-   else if($product_type == 'dark') {
-   $isDark = true;
-   $isOwner = true;
-   }
-   else if($product_type == 'light'){
-   $isOwner = true;
-   $isLight = true;
-   }
-   else {
-   $owner="You are not an owner ";
-   }
-
-}
-
-function if_isset($value) {
-  return isset($value) ? $value : '';
-}
 
 ?>
 
@@ -268,7 +230,7 @@ function if_isset($value) {
     border-width: 0;
   }
   form#register {
-    max-width: 300px;
+    max-width: 290px;
     text-align: left;
     margin: auto;
   }
@@ -376,7 +338,7 @@ function if_isset($value) {
             <div class="content" style="min-height:100%; width:100%; position:relative; display:block;">
                <div class="wpb_text_column wpb_content_element" style="text-align:center;">
 
-                     <h3><br /> <?php echo htmlentities($product_name) . ' Owner ID ' . $input . '.'; ?> </h3>
+                     <h3><br /> <?php echo htmlentities($product_name) . ' Owner ID ' . $our_id . '.'; ?> </h3>
                      <h3><?php echo 'Sold to: ' . ($owner_id ? $owner_name : '&lt;Not Registered&gt;') . '.'; ?> </h3>
                      <h3><?php echo 'Shipped on: ' . $sold_date . '.'; ?> </h3>
 
@@ -389,27 +351,28 @@ function if_isset($value) {
                        <h1>Register</h1>
                        <form id="register" method="post" action="">
                          <label>Name *</label><br>
-                         <input type="text" name="name" value="<?php echo $_POST['name'] ?>" placeholder="Your Name"><br>
+                         <input type="text" name="name" value="<?php echo if_isset($_POST, 'name') ?>" placeholder="Your Name"><br>
                          <?php echo isset($form_errors['name']) ? "<small class='error'>$form_errors[name]</small>" : "" ?>
                          <label>Email *</label><br>
-                         <input type="email" name="email" value="<?php echo $_POST['email'] ?>" placeholder="Your Email Address"><br>
+                         <input type="email" name="email" value="<?php echo if_isset($_POST, 'email') ?>" placeholder="Your Email Address"><br>
                          <?php echo isset($form_errors['email']) ? "<small class='error'>$form_errors[email]</small>" : "" ?>
                          <label>Address *</label><br>
-                         <input type="text" name="street1" value="<?php echo $_POST['street1'] ?>" placeholder="Street 1"><br>
+                         <input type="text" name="street1" value="<?php echo if_isset($_POST, 'street1') ?>" placeholder="Street 1"><br>
                          <?php echo isset($form_errors['street1']) ? "<small class='error'>$form_errors[street1]</small>" : "" ?>
-                         <input type="text" name="street2" value="<?php echo $_POST['street2'] ?>" placeholder="Street 2"><br>
+                         <input type="text" name="street2" value="<?php echo if_isset($_POST, 'street2') ?>" placeholder="Street 2"><br>
                          <?php echo isset($form_errors['street2']) ? "<small class='error'>$form_errors[street2]</small>" : "" ?>
-                         <input type="text" name="city" value="<?php echo $_POST['city'] ?>" placeholder="City"><br>
+                         <input type="text" name="city" value="<?php echo if_isset($_POST, 'city') ?>" placeholder="City"><br>
                          <?php echo isset($form_errors['city']) ? "<small class='error'>$form_errors[city]</small>" : "" ?>
-                         <input type="text" name="postcode" value="<?php echo $_POST['postcode'] ?>" placeholder="Post code"><br>
+                         <input type="text" name="postcode" value="<?php echo if_isset($_POST, 'postcode') ?>" placeholder="Post code"><br>
                          <?php echo isset($form_errors['postcode']) ? "<small class='error'>$form_errors[postcode]</small>" : "" ?>
-                         <input type="text" name="country" value="<?php echo $_POST['country'] ?>" placeholder="Country"><br>
+                         <input type="text" name="country" value="<?php echo if_isset($_POST, 'country') ?>" placeholder="Country"><br>
                          <?php echo isset($form_errors['country']) ? "<small class='error'>$form_errors[country]</small>" : "" ?>
                          <label>Phone *</label><br>
-                         <input type="text" name="phone" value="<?php echo $_POST['phone'] ?>" placeholder="Phone Number"><br>
+                         <input type="text" name="phone" value="<?php echo if_isset($_POST, 'phone') ?>" placeholder="Phone Number"><br>
                          <?php echo isset($form_errors['phone']) ? "<small class='error'>$form_errors[phone]</small>" : "" ?>
-                         <input type="checkbox" name="agree"> <label>Agree to xxx</label><br>
-                         <?php echo isset($form_errors['agree']) ? "<small class='error'>$form_errors[agree]</small>" : "" ?>
+                         <input type="checkbox" name="tandcs"> <label>Agree to Terms &amp; Conditions</label><br>
+                         <?php echo isset($form_errors['tandcs']) ? "<small class='error'>$form_errors[tandcs]</small>" : "" ?>
+                         <input type="checkbox" name="marketing" <?php echo isset($_POST['marketing']) ? 'checked' : '' ?>> <label>Agree to Marketing</label><br>
                          <button class="button" type="submit" name="action" value="update">Register</button>
                          <?php if ($owner_id) { ?>
                          <button class="button" type="submit" name="action" value="cancel">Cancel</button>
@@ -459,44 +422,19 @@ function if_isset($value) {
                      <?php } ?>
                      </div>
 
+                     <?php if ($our_id) { ?>
+                       <div id="photos" style="padding-top: 30px;">
+                          <?php echo "<img src=\"$image_url\">" ?>
+                       </div>
+                       <div class="indridients" >
+                          <h3><?php echo nl2br(htmlentities($description)) ?></h3>
+                       </div>
+                     <?php } ?>
 
-                     <div id="photos" style="padding-top: 30px;">
-                        <?php if($isDark) {
-                           echo ( " <img src=\"images/ND-3.jpg\"> ");
-                        }
-                        elseif ($isLight) {
-                           echo ( "<img src=\"images/NL.jpg\"> ");
-                        }
-                        else{
-                           echo ( "<img src=\"images/ND-3.jpg\"> ");
-                        }
-                        ?>
-                     </div>
-                     <div class="indridients" >
-                        <?php
-                              if($isDark) {
-
-                                 echo ("<h3>Neandertal dark&trade; contains olfactory elements: <br />
-Top note – Foliage, Ginger, Pink pepper, Grapefruit &amp; Pine.<br />
-Heart note – Incense, Geranium, Caraway &amp; Seaweed.<br />
-Base note – Vetiver, Patchouli, Oud, Amber, Musk, Leather, Sandalwood, Tobacco &amp; Labdanum absolute.</h3>"
-);
-                              }
-                              elseif ($isLight) {
-                                 echo ("<h3>Neandertal light&trade; contains olfactory elements: <br />
-Top notes – Hinoki, Coriander, Galbanum &amp; Violet Leaf.<br />
-Heart notes – Orris &amp; Metallic accord.<br />
-Base notes – Ambergris, Patchouli, Leather, Cedar &amp; Musk</h3>");
-                              }
-                              else {}
-                        ?>
-
-
-                     </div>
                      <div class="separator " style="margin-top: 50px;margin-bottom: 50px;"></div>
 
                      <?php
-                        if ($isOwner == true) {
+                        if ($owner_id) {
                           echo( "<div class=\"indridients\"><h3 style=\"text-decoration: underline;\">Special offers for owners. </h3>
                            <h3>Please redeem special discount by entering the code \"modernhuman\" at our <a href=\"https://neandertal.co.uk/shop/\">online store</a> to get special discounts. <br /> If you would like your friend to experience Neandertal, please <a href=\"mailto:contact@neandertal.co.uk?subject=Free sample request from app code:" . $encoded . " \">click here and email us</a> with his/her details. We will send Neandertal light and dark samples for free.</h3>
                            <h3>Feel free to <a href=\"mailto:contact@neandertal.co.uk?subject=Email from App\">email us</a> for any further feedback on our products.</h3>
