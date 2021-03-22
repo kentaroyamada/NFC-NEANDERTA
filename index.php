@@ -78,7 +78,17 @@ if ($result = mysqli_query($link, $sql) ) {
 }
 
 else {
-    echo "Error: " . $sql . " " . $link->error;
+    $error = $link->error;
+}
+
+$shops = array();
+if ($our_id && !$owner_id && !$shop_name) {
+  $sql = "SELECT * FROM shops ORDER BY name";
+  if ($result = mysqli_query($link, $sql) ) {
+    while ($row = mysqli_fetch_assoc($result)) {
+      $shops[] = $row;
+    }
+  }
 }
 
 $form_errors = array();
@@ -111,6 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id && $our_id) {
     }
     $owner_street2 = $_POST['street2'];
     $marketing = empty($_POST['marketing']) ? 0 : 1;
+    $sold_at = empty($_POST['sold_at']) ? null : $_POST['sold_at'];
 
     if (!count($form_errors)) {
       try {
@@ -130,23 +141,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id && $our_id) {
           $owner_id = $stmt->insert_id;
           $stmt->close();
 
-          $sql = 'UPDATE tags SET owner_id = ?, registered_date = ifnull(registered_date, now()) WHERE id = ?';
+          $sql = 'UPDATE tags SET owner_id = ?, registered_date = ifnull(registered_date, now())';
+          $sql .= ', sold_at = ifnull(sold_at, ?), sold_date = ifnull(sold_date, ifnull(registered_date, now())) WHERE id = ?';
           $stmt = $link->prepare($sql);
-          $stmt->bind_param("ii", $owner_id, $id);
+          $stmt->bind_param("iii", $owner_id, $sold_at, $id);
           $stmt->execute();
 
           if (!$stmt->error) {
             $registered = true;
           } else {
-            $error = $stmt->error;
+            $error = '2: ' . $stmt->error;
           }
           $stmt->close();
         } else {
-          $error = $stmt->error;
+          $error = '1: ' . $stmt->error;
           $stmt->close();
         }
       } catch (Throwable $e) {
-        $error = $e->getMessage();
+        $error = '3: ' . $e->getMessage();
       }
     }
   }
@@ -370,6 +382,17 @@ $link->close();
                          <label>Phone *</label><br>
                          <input type="text" name="phone" value="<?php echo if_isset($_POST, 'phone') ?>" placeholder="Phone Number"><br>
                          <?php echo isset($form_errors['phone']) ? "<small class='error'>$form_errors[phone]</small>" : "" ?>
+                         <?php if (count($shops)) { ?>
+                           <label>Shop Bought At</label><br>
+                           <select name="sold_at">
+                             <option value="">Please choose a shop</option>
+                             <option value="">-- Unknown --</option>
+                             <?php foreach ($shops as $shop) {
+                               $selected = if_isset($_POST, 'sold_at') == $shop['id'] ? 'selected' : null;
+                               echo "<option $selected value='$shop[id]'>$shop[name]</option>";
+                             } ?>
+                           </select><br>
+                         <?php } ?>
                          <input type="checkbox" name="tandcs"> <label>Agree to Terms &amp; Conditions</label><br>
                          <?php echo isset($form_errors['tandcs']) ? "<small class='error'>$form_errors[tandcs]</small>" : "" ?>
                          <input type="checkbox" name="marketing" <?php echo isset($_POST['marketing']) ? 'checked' : '' ?>> <label>Agree to Marketing</label><br>
