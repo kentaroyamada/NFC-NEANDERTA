@@ -48,6 +48,13 @@ $(document).ready(function() {
 				label: "name:",
 				name: "name"
 			}, {
+				label: "image_url:",
+				name: "image_url"
+			}, {
+				label: "description:",
+				name: "description",
+				type: 'textarea'
+			}, {
 				label: "refillable:",
 				name: "is_refillable"
 			}
@@ -73,6 +80,7 @@ $(document).ready(function() {
 			},
 			{ data: "type" },
 			{ data: "name" },
+			{ data: "image_url" },
 			{ data: "is_refillable" }
 		],
 		select: {
@@ -108,6 +116,7 @@ $(document).ready(function() {
 
 						<th>type</th>
 						<th>name</th>
+						<th>image_url</th>
 						<th>refillable</th>
 					</tr>
 				</thead>

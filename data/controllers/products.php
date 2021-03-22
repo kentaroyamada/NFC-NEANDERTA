@@ -23,6 +23,8 @@ Editor::inst( $db, 'products' )
 	->fields(
 		Field::inst( 'type' ),
 		Field::inst( 'name' ),
+		Field::inst( 'image_url' ),
+		Field::inst( 'description' ),
 		Field::inst( 'is_refillable' )
 	)
 	->process( $_POST )
