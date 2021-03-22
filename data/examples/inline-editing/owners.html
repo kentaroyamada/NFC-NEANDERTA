@@ -53,6 +53,9 @@ $(document).ready(function() {
 			}, {
 				label: "owner_address:",
 				name: "owner_address"
+			}, {
+				label: "marketing_agreement:",
+				name: "marketing_agreement"
 			}
 		]
 	} );
@@ -77,7 +80,8 @@ $(document).ready(function() {
 			{ data: "owner_name" },
 			{ data: "owner_email" },
 			{ data: "owner_phone" },
-			{ data: "owner_address" }
+			{ data: "owner_address" },
+			{ data: "marketing_agreement" }
 		],
 		select: {
 			style:    'os',
@@ -114,6 +118,7 @@ $(document).ready(function() {
 						<th>owner_email</th>
 						<th>owner_phone</th>
 						<th>owner_address</th>
+						<th>marketing_agreement</th>
 					</tr>
 				</thead>
 			</table>

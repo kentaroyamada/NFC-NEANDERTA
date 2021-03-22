@@ -24,7 +24,8 @@ Editor::inst( $db, 'owners' )
 		Field::inst( 'owner_name' ),
 		Field::inst( 'owner_email' ),
 		Field::inst( 'owner_phone' ),
-		Field::inst( 'owner_address' )
+		Field::inst( 'owner_address' ),
+		Field::inst( 'marketing_agreement' )
 	)
 	->process( $_POST )
 	->json();
