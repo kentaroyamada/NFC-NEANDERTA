@@ -23,6 +23,7 @@ Editor::inst( $db, 'owners' )
 	->fields(
 		Field::inst( 'owner_name' ),
 		Field::inst( 'owner_email' ),
+		Field::inst( 'owner_phone' ),
 		Field::inst( 'owner_address' )
 	)
 	->process( $_POST )
