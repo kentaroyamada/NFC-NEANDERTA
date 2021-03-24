@@ -350,17 +350,19 @@ $link->close();
             <div class="content" style="min-height:100%; width:100%; position:relative; display:block;">
                <div class="wpb_text_column wpb_content_element" style="text-align:center;">
 
-                     <h3><br /> <?php echo htmlentities($product_name) . ' Owner ID ' . $our_id . '.'; ?> </h3>
-                     <h3><?php echo 'Sold to: ' . ($owner_id ? $owner_name : '&lt;Not Registered&gt;') . '.'; ?> </h3>
+                     <h3><br /> <?php echo htmlentities($product_name, ENT_IGNORE, "UTF-8") . ' Owner ID ' . $our_id . '.'; ?> </h3>
+                     <h3><?php echo 'Owner name: ' . ($owner_id ? $owner_name : '&lt;Not Registered&gt;') . '.'; ?> </h3>
                      <h3><?php echo 'Shipped on: ' . $sold_date . '.'; ?> </h3>
+
+                      <h3> <?php echo "Shop name: " . $shop_name ?></h3>
 
                      <?php if ($error) { ?>
                        <span class="error">Error: <?php echo $error; ?></span>
                      <?php } ?>
-
+                     <div class="separator " style="margin-top: 50px;margin-bottom: 50px;"></div>
                      <div id="adminarea">
                      <?php if ($our_id && (!$owner_id || $action == 'edit' || count($form_errors))) { ?>
-                       <h1>Register</h1>
+                       <h4>Please register your bottle</h4>
                        <form id="register" method="post" action="">
                          <label>Name *</label><br>
                          <input type="text" name="name" value="<?php echo if_isset($_POST, 'name') ?>" placeholder="Your Name"><br>
@@ -402,7 +404,7 @@ $link->close();
                          <?php } ?>
                        </form>
                      <?php } elseif ($owner_id && $our_id) { ?>
-                       <h1>Welcome <?php echo $owner_name; ?></h1>
+                       <h4>Welcome <?php echo $owner_name; ?></h4>
                        <h3>Your product ID is <?php echo $our_id; ?></h3>
                        <h3>Your product record</h3>
                        <p style="margin-bottom:2em">
@@ -430,9 +432,13 @@ $link->close();
                            </ul>
                          </p>
                        <?php } ?>
-                       <form method="get" action="mailto:contact@neandertal.co.uk?subject=Owner+Enquiry">
-                         <button type="submit" class="button">Contact customer service</button>
-                       </form>
+                       <a href="mailto:contact@neandertal.co.uk?subject=Owner's Enquiry by <?php echo $product_name." ". $our_id ?>" >
+                        <button class="button"> Contact customer service</button>
+                      </a>
+                      <br />
+                       <br />
+
+
                        <?php if ($is_refillable) { ?>
                        <form method="get" action="<?php echo "https://neandertal.co.uk/shop/$product_type-refill" ?>">
                          <button type="submit" class="button">Order refill</button>
