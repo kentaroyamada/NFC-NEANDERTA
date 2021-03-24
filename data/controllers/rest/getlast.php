@@ -26,14 +26,14 @@ if($link == false)
 // e.g. /getlast.php/dark/ will return "dark"
 $type = pathinfo($_SERVER["REQUEST_URI"])["basename"];
 
-$sql = "SELECT p2.id, MAX(our_id) as max FROM tags";
-$sql .= " INNER JOIN products p1 ON (product_id = p1.id)";
-$sql .= " INNER JOIN products p2 ON (p2.type = '" . $type . "') GROUP BY p2.id;";
+//$sql = "SELECT p2.id, MAX(our_id) as max FROM tags";
+//$sql .= " INNER JOIN products p1 ON (product_id = p1.id)";
+//$sql .= " INNER JOIN products p2 ON (p2.type = '" . $type . "') GROUP BY p2.id;";
 
 // THIS IS IF our_id can/should be repeated (i.e. not unique as before)
-//$sql = "SELECT p.id, COALESCE(MAX(t.our_id), 1) AS max FROM products p";
-//$sql .= " LEFT JOIN tags t on (p.id = t.product_id)";
-//$sql .= " WHERE p.type = '" . $type . "' GROUP BY p.id;";
+$sql = "SELECT p.id, COALESCE(MAX(t.our_id), 1) AS max FROM products p";
+$sql .= " LEFT JOIN tags t on (p.id = t.product_id)";
+$sql .= " WHERE p.type = '" . $type . "' GROUP BY p.id;";
 
 if ($result = mysqli_query($link, $sql) ) {
 
